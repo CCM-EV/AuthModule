@@ -20,6 +20,10 @@ public class User {
     @Column(nullable = false)
     private String password;
     
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role = Role.USER;
+    
     @Column(nullable = false)
     private boolean enabled = false;
     
@@ -87,6 +91,14 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }
 
