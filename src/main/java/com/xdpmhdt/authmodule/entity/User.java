@@ -28,6 +28,9 @@ public class User {
     private boolean enabled = false;
     
     @Column(nullable = false)
+    private boolean locked = false;
+    
+    @Column(nullable = false)
     private LocalDateTime createdAt;
     
     private LocalDateTime updatedAt;
@@ -99,6 +102,14 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public boolean isLocked() {
+        return locked;
+    }
+
+    public void setLocked(boolean locked) {
+        this.locked = locked;
     }
 }
 
