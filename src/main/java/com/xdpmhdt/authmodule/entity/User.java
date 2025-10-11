@@ -20,6 +20,12 @@ public class User {
     @Column(nullable = false)
     private String password;
     
+    @Column(nullable = false)
+    private String firstName;
+    
+    @Column(nullable = false)
+    private String lastName;
+    
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.USER;
@@ -110,6 +116,22 @@ public class User {
 
     public void setLocked(boolean locked) {
         this.locked = locked;
+    }
+
+    public String getFirstName() {
+        return firstName;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 }
 
