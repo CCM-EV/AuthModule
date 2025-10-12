@@ -1,6 +1,7 @@
 package com.xdpmhdt.authmodule.controller;
 
 import com.xdpmhdt.authmodule.dto.AuthResponse;
+import com.xdpmhdt.authmodule.dto.LoginRequest;
 import com.xdpmhdt.authmodule.dto.RegisterRequest;
 import com.xdpmhdt.authmodule.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -24,6 +25,13 @@ public class AuthController {
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
+    }
+
+    @PostMapping("/login")
+    @Operation(summary = "Login user", description = "Authenticate user and return JWT tokens")
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
+        AuthResponse response = authService.login(request);
+        return ResponseEntity.ok(response);
     }
 }
 
