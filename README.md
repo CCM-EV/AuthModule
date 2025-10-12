@@ -1,10 +1,14 @@
-# Authentication Module
+# Authentication Module - Carbon Credit Marketplace for EV Owners
 
-A comprehensive Spring Boot authentication and authorization system with JWT, email verification, and password reset functionality.
+A comprehensive Spring Boot authentication and authorization system for Carbon Credit Marketplace platform with JWT, email verification, and password reset functionality.
 
 ## Features
 
 - 🔐 JWT-based authentication (Access & Refresh tokens)
+- 👤 Multi-role user registration: EV Owner, Carbon Credit Buyer, Carbon Verification & Audit, Admin
+- ⚡ EV Owner registration with vehicle information
+- 🏢 CC Buyer registration with organization details
+- ✅ CVA registration with certification agency information
 - 👤 User registration with email verification
 - 🔑 Password reset functionality
 - 📝 Audit logging for security events

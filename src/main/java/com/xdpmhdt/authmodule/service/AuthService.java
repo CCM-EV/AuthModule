@@ -57,9 +57,32 @@ public class AuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
-        user.setRole(Role.USER);
+        user.setRole(request.getRole() != null ? request.getRole() : Role.EV_OWNER);
         user.setEnabled(false); // User needs to verify email
         user.setCreatedAt(LocalDateTime.now());
+
+        // Set common fields
+        user.setPhoneNumber(request.getPhoneNumber());
+
+        // Set role-specific fields
+        switch (request.getRole()) {
+            case EV_OWNER:
+                user.setVehicleMake(request.getVehicleMake());
+                user.setVehicleModel(request.getVehicleModel());
+                user.setVehicleLicensePlate(request.getVehicleLicensePlate());
+                break;
+            case CC_BUYER:
+                user.setOrganizationName(request.getOrganizationName());
+                user.setTaxId(request.getTaxId());
+                break;
+            case CVA:
+                user.setCertificationAgency(request.getCertificationAgency());
+                user.setLicenseNumber(request.getLicenseNumber());
+                break;
+            case ADMIN:
+                // Admin doesn't require additional fields
+                break;
+        }
 
         // Save user
         user = userRepository.save(user);

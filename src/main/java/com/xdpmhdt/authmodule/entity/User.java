@@ -28,7 +28,35 @@ public class User {
     
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private Role role = Role.USER;
+    private Role role = Role.EV_OWNER;
+    
+    // Additional fields for different roles
+    @Column(length = 20)
+    private String phoneNumber;
+    
+    // For EV_OWNER: Vehicle information
+    @Column(length = 100)
+    private String vehicleMake;
+    
+    @Column(length = 100)
+    private String vehicleModel;
+    
+    @Column(length = 50)
+    private String vehicleLicensePlate;
+    
+    // For CC_BUYER: Organization information
+    @Column(length = 200)
+    private String organizationName;
+    
+    @Column(length = 100)
+    private String taxId;
+    
+    // For CVA: Verification organization details
+    @Column(length = 200)
+    private String certificationAgency;
+    
+    @Column(length = 100)
+    private String licenseNumber;
     
     @Column(nullable = false)
     private boolean enabled = false;
@@ -132,6 +160,70 @@ public class User {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public void setPhoneNumber(String phoneNumber) {
+        this.phoneNumber = phoneNumber;
+    }
+
+    public String getVehicleMake() {
+        return vehicleMake;
+    }
+
+    public void setVehicleMake(String vehicleMake) {
+        this.vehicleMake = vehicleMake;
+    }
+
+    public String getVehicleModel() {
+        return vehicleModel;
+    }
+
+    public void setVehicleModel(String vehicleModel) {
+        this.vehicleModel = vehicleModel;
+    }
+
+    public String getVehicleLicensePlate() {
+        return vehicleLicensePlate;
+    }
+
+    public void setVehicleLicensePlate(String vehicleLicensePlate) {
+        this.vehicleLicensePlate = vehicleLicensePlate;
+    }
+
+    public String getOrganizationName() {
+        return organizationName;
+    }
+
+    public void setOrganizationName(String organizationName) {
+        this.organizationName = organizationName;
+    }
+
+    public String getTaxId() {
+        return taxId;
+    }
+
+    public void setTaxId(String taxId) {
+        this.taxId = taxId;
+    }
+
+    public String getCertificationAgency() {
+        return certificationAgency;
+    }
+
+    public void setCertificationAgency(String certificationAgency) {
+        this.certificationAgency = certificationAgency;
+    }
+
+    public String getLicenseNumber() {
+        return licenseNumber;
+    }
+
+    public void setLicenseNumber(String licenseNumber) {
+        this.licenseNumber = licenseNumber;
     }
 }
 

@@ -7,6 +7,10 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
+/**
+ * Audit Log entity for Carbon Credit Marketplace
+ * Tracks all important actions performed by users (EV Owners, CC Buyers, CVA, Admins)
+ */
 @Entity
 @Table(name = "audit_logs")
 @Data

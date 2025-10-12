@@ -15,20 +15,26 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Authentication management APIs")
+@Tag(name = "Authentication", description = "Authentication management APIs for Carbon Credit Marketplace")
 public class AuthController {
 
     private final AuthService authService;
 
     @PostMapping("/register")
-    @Operation(summary = "Register a new user", description = "Create a new user account")
+    @Operation(
+            summary = "Register a new user",
+            description = "Create a new user account for Carbon Credit Marketplace (EV_OWNER, CC_BUYER, CVA, or ADMIN)"
+    )
     public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         AuthResponse response = authService.register(request);
         return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @PostMapping("/login")
-    @Operation(summary = "Login user", description = "Authenticate user and return JWT tokens")
+    @Operation(
+            summary = "Login user",
+            description = "Authenticate user and return JWT tokens for accessing Carbon Credit Marketplace"
+    )
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
