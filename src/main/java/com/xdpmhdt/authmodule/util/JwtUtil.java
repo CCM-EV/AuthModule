@@ -1,6 +1,7 @@
 package com.xdpmhdt.authmodule.util;
 
 import com.xdpmhdt.authmodule.config.JwtConfig;
+import com.xdpmhdt.authmodule.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
@@ -20,6 +21,9 @@ public class JwtUtil {
 
     @Autowired
     private JwtConfig jwtConfig;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     private SecretKey getSigningKey() {
         byte[] keyBytes = jwtConfig.getSecret().getBytes(StandardCharsets.UTF_8);
@@ -53,12 +57,31 @@ public class JwtUtil {
 
     public String generateAccessToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        // Add userId and role to claims for cross-service authentication
+        if (userDetails instanceof org.springframework.security.core.userdetails.User) {
+            // Get actual user from username
+            com.xdpmhdt.authmodule.entity.User user = extractUserFromDetails(userDetails);
+            if (user != null) {
+                claims.put("userId", user.getId());
+                claims.put("role", user.getRole().name());
+            }
+        }
         return createToken(claims, userDetails.getUsername(), jwtConfig.getAccessTokenExpiration());
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
         return createToken(claims, userDetails.getUsername(), jwtConfig.getRefreshTokenExpiration());
+    }
+    
+    // Helper method to extract User entity from UserDetails
+    private com.xdpmhdt.authmodule.entity.User extractUserFromDetails(UserDetails userDetails) {
+        try {
+            // This will be injected via constructor
+            return userRepository.findByUsername(userDetails.getUsername()).orElse(null);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private String createToken(Map<String, Object> claims, String subject, long expiration) {

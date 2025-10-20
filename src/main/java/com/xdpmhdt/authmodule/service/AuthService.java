@@ -58,7 +58,8 @@ public class AuthService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setRole(request.getRole() != null ? request.getRole() : Role.EV_OWNER);
-        user.setEnabled(false); // User needs to verify email
+        // TODO: Flip back to false once email verification flow is enabled
+        user.setEnabled(true); // Allow login until email verification feature is completed
         user.setCreatedAt(LocalDateTime.now());
 
         // Set common fields
