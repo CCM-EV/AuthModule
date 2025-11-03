@@ -9,10 +9,12 @@ import com.xdpmhdt.authmodule.entity.User;
 import com.xdpmhdt.authmodule.entity.VerificationToken;
 import com.xdpmhdt.authmodule.exception.BadRequestException;
 import com.xdpmhdt.authmodule.exception.UnauthorizedException;
+import com.xdpmhdt.authmodule.outbox.OutboxEventPublisher;
 import com.xdpmhdt.authmodule.repository.RefreshTokenRepository;
 import com.xdpmhdt.authmodule.repository.UserRepository;
 import com.xdpmhdt.authmodule.repository.VerificationTokenRepository;
 import com.xdpmhdt.authmodule.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -22,6 +24,8 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -37,6 +41,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
     private final AuthenticationManager authenticationManager;
+    private final OutboxEventPublisher outboxEventPublisher;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -86,6 +91,7 @@ public class AuthService {
 
         // Save user
         user = userRepository.save(user);
+        outboxEventPublisher.publishUserRegisteredEvent(user);
 
         // Create verification token
         VerificationToken verificationToken = new VerificationToken();
@@ -97,9 +103,9 @@ public class AuthService {
         // TODO: Send verification email
         // emailService.sendVerificationEmail(user.getEmail(), verificationToken.getToken());
 
-        // Generate JWT tokens (allow login even without verification for now)
+        // Generate JWT tokens with role-based audience (allow login even without verification for now)
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getUsername());
-        String accessToken = jwtUtil.generateAccessToken(userDetails);
+        String accessToken = jwtUtil.generateAccessToken(userDetails); // Uses role-based audience
         String refreshToken = jwtUtil.generateRefreshToken(userDetails);
 
         // Save refresh token
@@ -138,13 +144,30 @@ public class AuthService {
                     )
             );
 
+            HttpServletRequest httpServletRequest = ((ServletRequestAttributes) RequestContextHolder.currentRequestAttributes()).getRequest();
+            String ipAddress = httpServletRequest.getHeader("X-Forwarded-For");
+
+            if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {
+                ipAddress = httpServletRequest.getRemoteAddr();
+            } else {
+                ipAddress = ipAddress.split(",")[0].trim();
+            }
+            String userAgent = httpServletRequest.getHeader("User-Agent");
+
             // Load user details
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             User user = userRepository.findByUsername(userDetails.getUsername())
                     .orElseThrow(() -> new UnauthorizedException("User not found"));
 
-            // Generate JWT tokens
-            String accessToken = jwtUtil.generateAccessToken(userDetails);
+            outboxEventPublisher.publishUserLoggedInEvent(user, ipAddress, userAgent);
+
+            String accessToken;
+            if (request.getAudience() != null && !request.getAudience().trim().isEmpty()) {
+                accessToken = jwtUtil.generateAccessTokenWithAudience(userDetails, request.getAudience());
+            } else {
+                accessToken = jwtUtil.generateAccessToken(userDetails);
+            }
+            
             String refreshToken = jwtUtil.generateRefreshToken(userDetails);
 
             // Save refresh token
@@ -176,4 +199,3 @@ public class AuthService {
         }
     }
 }
-
