@@ -14,6 +14,7 @@ public class UserUpdateRequest {
     private Boolean enabled;
     private Boolean emailVerified;
     private Set<String> roles;
+    private String region;
     
     // EV_OWNER specific
     private String vehicleMake;

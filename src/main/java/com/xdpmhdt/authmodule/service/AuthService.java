@@ -13,6 +13,7 @@ import com.xdpmhdt.authmodule.repository.RefreshTokenRepository;
 import com.xdpmhdt.authmodule.repository.UserRepository;
 import com.xdpmhdt.authmodule.repository.VerificationTokenRepository;
 import com.xdpmhdt.authmodule.util.JwtUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -37,6 +38,7 @@ public class AuthService {
     private final JwtUtil jwtUtil;
     private final CustomUserDetailsService userDetailsService;
     private final AuthenticationManager authenticationManager;
+    private final OutboxEventPublisher outboxEventPublisher;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -64,6 +66,7 @@ public class AuthService {
 
         // Set common fields
         user.setPhoneNumber(request.getPhoneNumber());
+        user.setRegion(request.getRegion());
 
         // Set role-specific fields
         switch (request.getRole()) {
@@ -87,6 +90,28 @@ public class AuthService {
 
         // Save user
         user = userRepository.save(user);
+
+        // Publish user registration event using standardized DTO
+        com.xdpmhdt.authmodule.event.dto.UserEventDTO event = com.xdpmhdt.authmodule.event.dto.UserEventDTO.builder()
+                .eventId(UUID.randomUUID().toString())
+                .eventType("USER_REGISTERED")
+                .source("auth-service")
+                .timestamp(java.time.OffsetDateTime.now())
+                .version("1.0")
+                .correlationId(UUID.randomUUID().toString())
+                .userId(String.valueOf(user.getId()))
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .role(user.getRole().name())
+                .region(user.getRegion())
+                .enabled(user.isEnabled())
+                .action("REGISTERED")
+                .organizationName(user.getOrganizationName())
+                .vehicleMake(user.getVehicleMake())
+                .vehicleModel(user.getVehicleModel())
+                .phoneNumber(user.getPhoneNumber())
+                .build();
+        outboxEventPublisher.saveEvent("USER_REGISTERED", "auth.user.registered", event);
 
         // Create verification token
         VerificationToken verificationToken = new VerificationToken();
@@ -129,7 +154,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse login(LoginRequest request) {
+    public AuthResponse login(LoginRequest request, HttpServletRequest httpRequest) {
         try {
             // Authenticate user
             Authentication authentication = authenticationManager.authenticate(
@@ -143,6 +168,30 @@ public class AuthService {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             User user = userRepository.findByUsername(userDetails.getUsername())
                     .orElseThrow(() -> new UnauthorizedException("User not found"));
+
+            // Publish user login event using standardized DTO
+            String ipAddress = httpRequest.getRemoteAddr();
+            String userAgent = httpRequest.getHeader("User-Agent");
+
+            com.xdpmhdt.authmodule.event.dto.UserEventDTO loginEvent = com.xdpmhdt.authmodule.event.dto.UserEventDTO.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType("USER_LOGGED_IN")
+                    .source("auth-service")
+                    .timestamp(java.time.OffsetDateTime.now())
+                    .version("1.0")
+                    .correlationId(UUID.randomUUID().toString())
+                    .userId(String.valueOf(user.getId()))
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .role(user.getRole().name())
+                .region(user.getRegion())
+                    .enabled(user.isEnabled())
+                    .action("LOGGED_IN")
+                    .ipAddress(ipAddress)
+                    .userAgent(userAgent)
+                .phoneNumber(user.getPhoneNumber())
+                    .build();
+            outboxEventPublisher.saveEvent("USER_LOGIN", "auth.user.loggedin", loginEvent);
 
             // Generate JWT tokens
             String accessToken = jwtUtil.generateAccessToken(userDetails);

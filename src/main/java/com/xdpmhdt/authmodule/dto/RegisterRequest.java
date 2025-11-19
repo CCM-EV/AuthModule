@@ -51,6 +51,9 @@ public class RegisterRequest {
     @Pattern(regexp = "^[0-9]{10,15}$", message = "Phone number must be 10-15 digits")
     private String phoneNumber;
 
+    @Size(max = 64, message = "Region must not exceed 64 characters")
+    private String region;
+
     // Fields for EV_OWNER role
     @Size(max = 100, message = "Vehicle make must not exceed 100 characters")
     private String vehicleMake;

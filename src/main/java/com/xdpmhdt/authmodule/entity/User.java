@@ -33,6 +33,9 @@ public class User {
     // Additional fields for different roles
     @Column(length = 20)
     private String phoneNumber;
+
+    @Column(length = 64)
+    private String region;
     
     // For EV_OWNER: Vehicle information
     @Column(length = 100)
@@ -168,6 +171,14 @@ public class User {
 
     public void setPhoneNumber(String phoneNumber) {
         this.phoneNumber = phoneNumber;
+    }
+
+    public String getRegion() {
+        return region;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
     }
 
     public String getVehicleMake() {

@@ -6,6 +6,7 @@ import com.xdpmhdt.authmodule.dto.RegisterRequest;
 import com.xdpmhdt.authmodule.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -35,8 +36,8 @@ public class AuthController {
             summary = "Login user",
             description = "Authenticate user and return JWT tokens for accessing Carbon Credit Marketplace"
     )
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        AuthResponse response = authService.login(request, httpRequest);
         return ResponseEntity.ok(response);
     }
 }

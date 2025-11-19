@@ -7,6 +7,7 @@ import com.xdpmhdt.authmodule.entity.AuditLog;
 import com.xdpmhdt.authmodule.entity.Role;
 import com.xdpmhdt.authmodule.entity.User;
 import com.xdpmhdt.authmodule.exception.ResourceNotFoundException;
+import com.xdpmhdt.authmodule.event.dto.UserEventDTO;
 import com.xdpmhdt.authmodule.repository.AuditLogRepository;
 import com.xdpmhdt.authmodule.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -27,6 +29,7 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final AuditLogRepository auditLogRepository;
+    private final OutboxEventPublisher outboxEventPublisher;
 
     @Transactional(readOnly = true)
     public Page<UserListResponse> getAllUsers(int page, int size, String role, Boolean enabled, 
@@ -85,6 +88,10 @@ public class AdminService {
         if (request.getEmail() != null) {
             user.setEmail(request.getEmail());
         }
+
+        if (request.getRegion() != null) {
+            user.setRegion(request.getRegion());
+        }
         
         if (request.getEnabled() != null) {
             user.setEnabled(request.getEnabled());
@@ -111,6 +118,8 @@ public class AdminService {
         user.setUpdatedAt(LocalDateTime.now());
         user = userRepository.save(user);
 
+        publishUserEvent(user, "USER_UPDATED", "UPDATED", "auth.user.updated");
+
         // Log the action
         logAction("UPDATE_USER", "Admin updated user: " + user.getUsername(), userId.toString());
 
@@ -128,6 +137,7 @@ public class AdminService {
         userRepository.save(user);
 
         String action = enabled ? "ENABLE_USER" : "DISABLE_USER";
+        publishUserEvent(user, "USER_STATUS_CHANGED", enabled ? "ENABLED" : "DISABLED", "auth.user.updated");
         logAction(action, "Admin " + action.toLowerCase() + " user: " + user.getUsername(), userId.toString());
     }
 
@@ -138,6 +148,7 @@ public class AdminService {
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         logAction("DELETE_USER", "Admin deleted user: " + user.getUsername(), userId.toString());
+        publishUserEvent(user, "USER_DELETED", "DELETED", "auth.user.deleted");
         userRepository.delete(user);
     }
 
@@ -197,6 +208,7 @@ public class AdminService {
                 .emailVerified(true)  // Default value as field not in current entity
                 .createdAt(user.getCreatedAt())
                 .lastLoginAt(user.getUpdatedAt())  // Use updatedAt as proxy for lastLoginAt
+                .region(user.getRegion())
                 .organizationName(user.getOrganizationName())
                 .certificationAgency(user.getCertificationAgency())
                 .vehicleMake(user.getVehicleMake())
@@ -217,6 +229,7 @@ public class AdminService {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .lastLoginAt(user.getUpdatedAt())  // Use updatedAt as proxy for lastLoginAt
+                .region(user.getRegion())
                 .vehicleMake(user.getVehicleMake())
                 .vehicleModel(user.getVehicleModel())
                 .vehicleLicensePlate(user.getVehicleLicensePlate())
@@ -234,6 +247,33 @@ public class AdminService {
         // Note: AuditLog entity doesn't have entityId field, using details field
         // createdAt will be set by @PrePersist
         auditLogRepository.save(log);
+    }
+
+    private void publishUserEvent(User user, String eventType, String action, String routingKey) {
+        try {
+            UserEventDTO event = UserEventDTO.builder()
+                    .eventId(UUID.randomUUID().toString())
+                    .eventType(eventType)
+                    .source("auth-service")
+                    .timestamp(OffsetDateTime.now())
+                    .version("1.0")
+                    .correlationId(UUID.randomUUID().toString())
+                    .userId(String.valueOf(user.getId()))
+                    .username(user.getUsername())
+                    .email(user.getEmail())
+                    .role(user.getRole().name())
+                    .region(user.getRegion())
+                    .enabled(user.isEnabled())
+                    .action(action)
+                    .organizationName(user.getOrganizationName())
+                    .vehicleMake(user.getVehicleMake())
+                    .vehicleModel(user.getVehicleModel())
+                    .phoneNumber(user.getPhoneNumber())
+                    .build();
+            outboxEventPublisher.saveEvent(eventType, routingKey, event);
+        } catch (Exception ex) {
+            logAction("EVENT_PUBLISH_FAILED", "Failed to publish " + eventType + " for user " + user.getUsername(), String.valueOf(user.getId()));
+        }
     }
 }
 

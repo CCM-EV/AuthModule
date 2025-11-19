@@ -24,6 +24,7 @@ public class UserDetailsResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime lastLoginAt;
+    private String region;
     
     // EV_OWNER specific fields
     private String vehicleMake;

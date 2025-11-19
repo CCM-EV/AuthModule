@@ -23,6 +23,7 @@ public class UserListResponse {
     private boolean emailVerified;
     private LocalDateTime createdAt;
     private LocalDateTime lastLoginAt;
+    private String region;
     
     // Role-specific info
     private String organizationName; // For CC_BUYER
