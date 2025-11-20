@@ -176,5 +176,25 @@ public class AuthService {
             throw new UnauthorizedException("Invalid username or password");
         }
     }
+
+    public AuthResponse.UserDto getCurrentUser(Authentication authentication) {
+        if (authentication == null || authentication.getPrincipal() == null) {
+            throw new UnauthorizedException("User not authenticated");
+        }
+
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+        User user = userRepository.findByUsername(userDetails.getUsername())
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+
+        return AuthResponse.UserDto.builder()
+                .id(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .role(user.getRole().name())
+                .emailVerified(user.isEnabled())
+                .build();
+    }
 }
 
