@@ -5,6 +5,7 @@ import com.xdpmhdt.authmodule.dto.LoginRequest;
 import com.xdpmhdt.authmodule.dto.RegisterRequest;
 import com.xdpmhdt.authmodule.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -39,6 +41,17 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
         AuthResponse response = authService.login(request, httpRequest);
         return ResponseEntity.ok(response);
+    }
+
+    @GetMapping("/me")
+    @Operation(
+            summary = "Get current user profile",
+            description = "Get the authenticated user's profile information",
+            security = @SecurityRequirement(name = "bearerAuth")
+    )
+    public ResponseEntity<AuthResponse.UserDto> getCurrentUser(Authentication authentication) {
+        AuthResponse.UserDto userDto = authService.getCurrentUser(authentication);
+        return ResponseEntity.ok(userDto);
     }
 }
 
